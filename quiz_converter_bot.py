@@ -2,7 +2,13 @@ import json
 import io
 import re
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    ContextTypes,
+    filters
+)
 
 TOKEN = "8424951624:AAH5kqadTIofTAAZsRgwZTQkU-2hqjW7niQ"
 
@@ -21,7 +27,7 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def set_filename(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id not in sessions:
-        return  # seans başlamayıb
+        return
     if sessions[chat_id]["filename"] is None:
         filename = update.message.text.strip()
         if not filename.endswith(".json"):
@@ -38,14 +44,13 @@ async def end_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     json_str = json.dumps(sessions[chat_id]["quizzes"], ensure_ascii=False, indent=2)
-    bio = io.BytesIO()
-    bio.write(json_str.encode('utf-8'))
+    bio = io.BytesIO(json_str.encode("utf-8"))
     bio.seek(0)
 
     filename = sessions[chat_id]["filename"] or "quiz.json"
     await update.message.reply_document(document=bio, filename=filename)
 
-    sessions[chat_id] = {"quizzes": [], "filename": None}  # session-u sıfırla
+    sessions[chat_id] = {"quizzes": [], "filename": None}
 
 # Poll mesajlarını JSON-a çevirən funksiya
 async def handle_poll_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,6 +64,7 @@ async def handle_poll_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     options = {chr(97 + i): opt.text for i, opt in enumerate(poll.options)}
     correct_index = poll.correct_option_id
     correct_key = chr(97 + correct_index) if correct_index is not None else None
+
     quiz_json = {
         "type": "SINGLE_CHOICE",
         "questionText": question_text,
@@ -71,6 +77,7 @@ async def handle_poll_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 # Bot qurulması
 app = Application.builder().token(TOKEN).build()
+
 app.add_handler(CommandHandler("baslayiriq", start_quiz))
 app.add_handler(CommandHandler("bitirdik", end_quiz))
 app.add_handler(MessageHandler(filters.POLL, handle_poll_message))
